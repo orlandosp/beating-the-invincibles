@@ -1,0 +1,851 @@
+<meta charset="utf-8">
+<title>Beating the Invincibles — Champions League squad game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --night:#0b1226;
+    --panel:#141c36;
+    --panel-2:#1b2547;
+    --line:#26325c;
+    --chalk:#eaf0ff;
+    --silver:#9fb0d0;
+    --dim:#6b7ba3;
+    --gold:#e8c35c;
+    --gold-dim:#a98c3a;
+    --grass:#4fb26a;
+    --danger:#e05a5a;
+    --gk:#e8c35c; --df:#5b8def; --mf:#4fb26a; --at:#e05a5a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--night);
+    background-image:
+      radial-gradient(1200px 500px at 50% -200px, #1d2a55 0%, transparent 70%),
+      radial-gradient(700px 300px at 15% 110%, #101a3a 0%, transparent 70%);
+    color:var(--chalk);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    min-height:100vh;
+  }
+  .wrap{max-width:540px;margin:0 auto;padding:20px 16px 60px}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+  /* ---------- type ---------- */
+  h1.title{
+    font-size:clamp(44px,13vw,64px);font-weight:900;letter-spacing:-.03em;
+    line-height:.92;margin:26px 0 8px;text-transform:uppercase;text-wrap:balance;
+  }
+  h1.title .k{color:var(--gold)}
+  .tagline{color:var(--silver);font-size:15px;line-height:1.5;margin:0 0 26px;max-width:42ch}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:0 0 10px}
+  .section-gap{margin-top:30px}
+
+  /* ---------- rules ---------- */
+  .rules{display:flex;flex-direction:column;gap:10px;margin:0 0 28px;padding:0;list-style:none}
+  .rules li{display:flex;gap:12px;align-items:flex-start;color:var(--silver);font-size:14px;line-height:1.45}
+  .rules .n{
+    flex:0 0 22px;height:22px;border-radius:50%;background:var(--panel-2);border:1px solid var(--line);
+    color:var(--gold);font-weight:800;font-size:12px;display:grid;place-items:center;margin-top:1px;
+  }
+  .rules b{color:var(--chalk)}
+
+  /* ---------- benchmark picker ---------- */
+  .bench{display:flex;flex-direction:column;gap:8px}
+  .bench-card{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+    color:var(--chalk);cursor:pointer;transition:border-color .15s, transform .1s;
+  }
+  .bench-card:hover{border-color:var(--gold-dim)}
+  .bench-card.sel{border-color:var(--gold);background:var(--panel-2)}
+  .bench-card:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .bench-meta{flex:1;min-width:0}
+  .bench-name{font-weight:800;font-size:15px}
+  .bench-blurb{color:var(--dim);font-size:12px;line-height:1.35;margin-top:2px}
+  .pips{display:flex;gap:3px;margin-top:6px}
+  .pip{width:14px;height:5px;border-radius:2px;background:var(--line)}
+  .pip.on{background:var(--gold)}
+
+  /* ---------- shirt crest ---------- */
+  .crest{flex:0 0 46px;width:46px;height:46px;display:grid;place-items:center}
+  .crest.big{flex-basis:68px;width:68px;height:68px}
+  .crest svg{width:100%;height:100%;display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:none;border-radius:10px;padding:14px 22px;font-size:15px;font-weight:800;
+    letter-spacing:.02em;cursor:pointer;transition:transform .1s, filter .15s;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn-gold{background:var(--gold);color:#241c05}
+  .btn-gold:hover{filter:brightness(1.07)}
+  .btn-ghost{background:transparent;color:var(--silver);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--chalk);border-color:var(--dim)}
+  .btn:disabled{opacity:.38;cursor:not-allowed;filter:none}
+  .btn-block{width:100%}
+
+  /* ---------- draft screen ---------- */
+  .topbar{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;
+  }
+  .bank{font-size:34px;font-weight:800;color:var(--gold);letter-spacing:-.02em}
+  .bank.low{color:var(--danger)}
+  .bank-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+  .pitch{
+    display:flex;flex-direction:column;gap:7px;margin:14px 0 20px;padding:12px 8px;
+    border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg, rgba(79,178,106,.07), rgba(79,178,106,.015) 70%, transparent);
+  }
+  .pitch-row{display:flex;gap:6px;justify-content:center}
+  .slot{
+    flex:0 1 96px;min-width:0;background:var(--panel);border:1px dashed var(--line);border-radius:10px;
+    padding:7px 4px;text-align:center;min-height:56px;
+  }
+  .slot.filled{border-style:solid;border-color:var(--line);background:var(--panel-2)}
+  .slot .pos{font-size:10px;font-weight:800;letter-spacing:.12em}
+  .slot .who{font-size:11px;font-weight:700;line-height:1.15;margin-top:5px;color:var(--chalk);overflow-wrap:anywhere}
+  .slot .r{font-size:10px;color:var(--dim);margin-top:2px}
+  .pos-GK{color:var(--gk)} .pos-DF{color:var(--df)} .pos-MF{color:var(--mf)} .pos-AT{color:var(--at)}
+
+  .wheel{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 16px;text-align:center;
+  }
+  .wheel-card{display:flex;align-items:center;justify-content:center;gap:14px;min-height:80px}
+  .wheel-club{font-size:20px;font-weight:900;letter-spacing:-.01em;line-height:1.1}
+  .wheel-season{color:var(--gold);font-weight:700;font-size:13px;margin-top:3px}
+  .wheel-hint{color:var(--dim);font-size:13px;margin:4px 0 16px}
+  .wheel-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
+  @keyframes landPulse{0%{transform:scale(.94)}55%{transform:scale(1.04)}100%{transform:scale(1)}}
+  .landed{animation:landPulse .4s ease-out}
+  @media (prefers-reduced-motion: reduce){.landed{animation:none}.btn:active{transform:none}}
+
+  .players{display:flex;flex-direction:column;gap:7px;margin-top:16px}
+  .prow{
+    display:flex;align-items:center;gap:10px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;padding:9px 10px 9px 12px;
+  }
+  .prow.off{opacity:.42}
+  .pbadge{
+    flex:0 0 34px;text-align:center;font-size:10px;font-weight:900;letter-spacing:.06em;
+    border-radius:6px;padding:4px 0;background:var(--night);
+  }
+  .pname{flex:1;font-weight:700;font-size:14px;min-width:0}
+  .pstats{display:block;font-weight:400;font-size:11px;color:var(--dim);margin-top:2px;font-variant-numeric:tabular-nums}
+  .prating{font-size:13px;color:var(--silver);width:30px;text-align:right}
+  .pprice{font-size:13px;font-weight:800;color:var(--gold);width:62px;text-align:right}
+  .psign{
+    flex:0 0 auto;border:1px solid var(--gold-dim);background:transparent;color:var(--gold);
+    border-radius:8px;padding:7px 13px;font-weight:800;font-size:12px;cursor:pointer;
+  }
+  .psign:hover{background:var(--gold);color:#241c05}
+  .psign:disabled{opacity:.35;cursor:not-allowed;background:transparent;color:var(--gold)}
+  .note{color:var(--dim);font-size:12.5px;line-height:1.45;margin-top:12px}
+  .note b{color:var(--silver)}
+
+  /* ---------- results ---------- */
+  .versus{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 14px;margin-bottom:14px;
+  }
+  .vteam{text-align:center}
+  .vteam .nm{font-weight:900;font-size:14px;line-height:1.15;margin-top:8px}
+  .vteam .sub{color:var(--dim);font-size:11px;margin-top:2px}
+  .vx{font-weight:900;color:var(--dim);font-size:13px;letter-spacing:.1em}
+  .crest-c{display:grid;place-items:center}
+
+  .bigpct{
+    text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:24px 16px 20px;margin-bottom:14px;
+  }
+  .bigpct .num{font-size:clamp(56px,18vw,84px);font-weight:800;letter-spacing:-.03em;line-height:1}
+  .bigpct .num.good{color:var(--grass)} .bigpct .num.mid{color:var(--gold)} .bigpct .num.bad{color:var(--danger)}
+  .bigpct .cap{color:var(--silver);font-size:13px;margin-top:8px;line-height:1.45}
+  .verdict{font-weight:800;font-size:16px;margin-top:14px}
+
+  .tie{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+  .legline{display:flex;justify-content:space-between;font-size:14px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .legline:last-of-type{border-bottom:none}
+  .legline .sc{font-weight:800}
+  .tie-story{color:var(--silver);font-size:13px;line-height:1.5;margin-top:10px}
+
+  .bestfive{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:22px}
+  .bf-row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:5px 0}
+  .bf-row .nm{font-weight:700}
+  .bf-row .v{color:var(--gold);font-weight:700}
+  .bf-sum{border-top:1px solid var(--line);margin-top:8px;padding-top:10px;color:var(--silver);font-size:13px;line-height:1.5}
+
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .hidden{display:none}
+  footer{color:var(--dim);font-size:11.5px;margin-top:34px;line-height:1.5;text-align:center}
+</style>
+
+<div class="wrap">
+
+  <!-- ============ INTRO ============ -->
+  <section id="scr-intro">
+    <h1 class="title">Beating the<br><span class="k">Invincibles</span></h1>
+    <p class="tagline">Spin the wheel of Champions League history, build a full XI on a budget, and see if your squad can topple one of Europe's all-time great teams.</p>
+
+    <ul class="rules">
+      <li><span class="n">1</span><span>You get <b>€500M</b>. The wheel lands on a random <b>Champions League squad</b> from 1992&#8202;–&#8202;today.</span></li>
+      <li><span class="n">2</span><span>Sign <b>one player per spin</b> at his market value until your <b>full XI</b> is complete — in the formation you choose.</span></li>
+      <li><span class="n">3</span><span>Blow the budget early and you'll be signing journeymen for the last slots. Don't like the team? A re-spin costs <b>€30M</b>.</span></li>
+      <li><span class="n">4</span><span>Your XI faces the giant in a <b>home-and-away tie</b> — simulated 10,000 times.</span></li>
+    </ul>
+
+    <p class="eyebrow">Choose your giant</p>
+    <div class="bench" id="bench-list"></div>
+
+    <p class="eyebrow" style="margin-top:26px">Choose your shape</p>
+    <div class="bench" id="form-list"></div>
+
+    <div class="section-gap">
+      <button class="btn btn-gold btn-block" id="btn-start">Start drafting</button>
+    </div>
+  </section>
+
+  <!-- ============ DRAFT ============ -->
+  <section id="scr-draft" class="hidden">
+    <div class="topbar">
+      <div>
+        <div class="bank-label">Transfer budget</div>
+        <div class="bank mono" id="bank">€400.0M</div>
+      </div>
+      <button class="btn btn-ghost" id="btn-restart1" style="padding:9px 14px;font-size:12px">Start over</button>
+    </div>
+
+    <div class="pitch" id="slots"></div>
+
+    <div class="wheel" id="wheel">
+      <div class="wheel-card" id="wheel-card">
+        <div class="crest big" id="w-crest" aria-hidden="true">?</div>
+        <div style="text-align:left">
+          <div class="wheel-club" id="w-club">The wheel of Europe</div>
+          <div class="wheel-season" id="w-season">1992 – today</div>
+        </div>
+      </div>
+      <p class="wheel-hint" id="wheel-hint">Spin to draw a legendary squad.</p>
+      <div class="wheel-actions" id="wheel-actions">
+        <button class="btn btn-gold" id="btn-spin">Spin the wheel</button>
+        <button class="btn btn-ghost hidden" id="btn-respin">Re-spin · €30M</button>
+      </div>
+      <div class="players hidden" id="players"></div>
+      <p class="note hidden" id="draft-note"></p>
+    </div>
+
+    <div class="section-gap hidden" id="go-tie">
+      <button class="btn btn-gold btn-block" id="btn-sim">Squad complete — play the tie</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="scr-result" class="hidden">
+    <p class="eyebrow" style="margin-top:6px">The verdict</p>
+
+    <div class="versus">
+      <div class="vteam">
+        <div class="crest-c"><div class="crest big" id="r-you"></div></div>
+        <div class="nm">Your XI</div>
+        <div class="sub mono" id="r-spend"></div>
+      </div>
+      <div class="vx">VS</div>
+      <div class="vteam">
+        <div class="crest-c"><div class="crest big" id="r-crest"></div></div>
+        <div class="nm" id="r-opp"></div>
+        <div class="sub" id="r-opp-sub"></div>
+      </div>
+    </div>
+
+    <div class="bigpct">
+      <div class="num mono" id="r-pct">0%</div>
+      <div class="cap">of 10,000 two-legged ties, your squad knocks out the giant<br>(extra time and penalties included)</div>
+      <div class="verdict" id="r-verdict"></div>
+    </div>
+
+    <div class="tie">
+      <p class="eyebrow" style="margin-bottom:8px">One night in Europe — a sample tie</p>
+      <div class="legline"><span>Leg 1 · your place</span><span class="sc mono" id="r-leg1"></span></div>
+      <div class="legline"><span>Leg 2 · their fortress</span><span class="sc mono" id="r-leg2"></span></div>
+      <div class="legline"><span>Aggregate</span><span class="sc mono" id="r-agg"></span></div>
+      <p class="tie-story" id="r-story"></p>
+    </div>
+
+    <div class="bestfive">
+      <p class="eyebrow" style="margin-bottom:8px">The XI you could have signed</p>
+      <div id="r-best"></div>
+      <p class="bf-sum" id="r-best-sum"></p>
+    </div>
+
+    <div class="stack">
+      <button class="btn btn-gold btn-block" id="btn-again">Run it back</button>
+      <button class="btn btn-ghost btn-block" id="btn-change">Change opponent</button>
+    </div>
+  </section>
+
+  <footer>A free game for friends. Player ratings &amp; prices are the house's opinion — argue accordingly. ⚽</footer>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   DATA — iconic Champions League squads, 1992/93 → today.
+   Player: [name, positions("MF/AT" = either), rating 1-99, price €M at 2026 values]
+===================================================================== */
+const TEAMS = [
+ {c:"Marseille",s:"1992-93",k:["#009ddc","#ffffff"],p:[["Barthez","GK",84,22],["Desailly","DF",88,55],["Angloma","DF",83,20],["Deschamps","MF",86,40],["Abédi Pelé","MF/AT",88,55],["Völler","AT",86,35],["Bokšić","AT",85,30]]},
+ {c:"AC Milan",s:"1993-94",k:["#d40026","#000000"],p:[["S. Rossi","GK",83,18],["Maldini","DF",94,110],["Baresi","DF",93,90],["Costacurta","DF",86,35],["Albertini","MF",85,35],["Desailly","MF",88,60],["Savićević","MF/AT",88,60],["Massaro","AT",84,25]]},
+ {c:"Ajax",s:"1994-95",k:["#d2122e","#ffffff"],p:[["Van der Sar","GK",88,50],["F. de Boer","DF",86,40],["Rijkaard","MF",89,65],["Davids","MF",87,55],["Seedorf","MF",87,55],["Litmanen","MF/AT",89,70],["Overmars","MF/AT",88,60],["Kluivert","AT",87,65]]},
+ {c:"Juventus",s:"1995-96",k:["#000000","#ffffff"],p:[["Peruzzi","GK",86,30],["Ferrara","DF",86,35],["Conte","MF",84,28],["Deschamps","MF",86,40],["Del Piero","AT",91,120],["Vialli","AT",87,55],["Ravanelli","AT",84,30]]},
+ {c:"Dortmund",s:"1996-97",k:["#fde100","#000000"],p:[["Klos","GK",82,15],["Sammer","DF",92,85],["Kohler","DF",87,40],["Reuter","DF",82,15],["Möller","MF/AT",87,50],["Riedle","AT",83,22],["Chapuisat","AT",84,26]]},
+ {c:"Real Madrid",s:"1997-98",k:["#ffffff","#febe10"],p:[["Illgner","GK",82,14],["Hierro","DF",89,60],["Roberto Carlos","DF",90,85],["Redondo","MF",89,70],["Seedorf","MF",86,45],["Raúl","AT",90,110],["Mijatović","AT",86,45],["Morientes","AT",85,40]]},
+ {c:"Man United",s:"1998-99",k:["#da291c","#fbe122"],p:[["Schmeichel","GK",91,65],["Stam","DF",90,75],["G. Neville","DF",84,25],["Irwin","DF",83,20],["Keane","MF",90,80],["Scholes","MF",89,85],["Beckham","MF",90,100],["Giggs","MF/AT",89,90],["Yorke","AT",87,55],["Cole","AT",85,45]]},
+ {c:"Bayern",s:"2000-01",k:["#dc052d","#0066b2"],p:[["Kahn","GK",92,60],["Lizarazu","DF",86,35],["Kuffour","DF",84,25],["Effenberg","MF",88,55],["Scholl","MF/AT",86,45],["Salihamidžić","MF",82,18],["Élber","AT",86,45]]},
+ {c:"Real Madrid",s:"2001-02",k:["#ffffff","#febe10"],p:[["Casillas","GK",88,55],["Hierro","DF",87,40],["Roberto Carlos","DF",90,80],["Makélélé","MF",88,60],["Figo","MF/AT",92,140],["Zidane","MF",96,200],["Raúl","AT",92,120],["Morientes","AT",86,45]]},
+ {c:"Leverkusen",s:"2001-02",k:["#e32221","#000000"],p:[["Butt","GK",81,12],["Lúcio","DF",87,50],["Nowotny","DF",83,20],["Ballack","MF",90,95],["Zé Roberto","MF/AT",86,45],["Schneider","MF",84,30],["Berbatov","AT",83,35],["Neuville","AT",82,20]]},
+ {c:"AC Milan",s:"2002-03",k:["#d40026","#000000"],p:[["Dida","GK",87,35],["Nesta","DF",92,90],["Maldini","DF",91,80],["Pirlo","MF",91,100],["Seedorf","MF",88,60],["Rui Costa","MF/AT",88,65],["Shevchenko","AT",93,140],["Inzaghi","AT",87,55]]},
+ {c:"Porto",s:"2003-04",k:["#003893","#ffffff"],p:[["Vítor Baía","GK",85,25],["R. Carvalho","DF",88,60],["P. Ferreira","DF",83,22],["Costinha","MF",82,16],["Maniche","MF",84,28],["Deco","MF/AT",90,95],["Derlei","AT",83,22],["McCarthy","AT",82,18]]},
+ {c:"Arsenal",s:"2003-04",k:["#ef0107","#ffffff"],p:[["Lehmann","GK",85,25],["Campbell","DF",88,55],["K. Touré","DF",85,32],["Cole","DF",87,50],["Vieira","MF",92,110],["Gilberto","MF",84,28],["Pires","MF/AT",89,80],["Ljungberg","MF/AT",85,40],["Henry","AT",95,180],["Bergkamp","AT",89,65]]},
+ {c:"Chelsea",s:"2004-05",k:["#034694","#ffffff"],p:[["Čech","GK",90,55],["Terry","DF",89,65],["R. Carvalho","DF",87,50],["Makélélé","MF",89,60],["Lampard","MF",90,95],["Robben","MF/AT",89,95],["Duff","MF/AT",84,32],["Drogba","AT",89,90],["Gudjohnsen","AT",83,25]]},
+ {c:"Liverpool",s:"2004-05",k:["#c8102e","#ffffff"],p:[["Dudek","GK",80,10],["Carragher","DF",85,32],["Hyypiä","DF",84,26],["Alonso","MF",88,80],["Gerrard","MF",92,120],["Riise","DF/MF",82,18],["L. García","MF/AT",83,24],["Baroš","AT",80,14]]},
+ {c:"Barcelona",s:"2005-06",k:["#a50044","#004d98"],p:[["Valdés","GK",85,30],["Puyol","DF",89,65],["Márquez","DF",85,35],["Deco","MF",89,75],["Xavi","MF",89,80],["Ronaldinho","MF/AT",95,190],["Eto'o","AT",92,120],["Messi","AT",88,110],["Larsson","AT",84,22]]},
+ {c:"AC Milan",s:"2006-07",k:["#d40026","#000000"],p:[["Dida","GK",86,28],["Nesta","DF",91,80],["Maldini","DF",89,55],["Gattuso","MF",86,45],["Pirlo","MF",92,110],["Seedorf","MF",88,60],["Kaká","MF/AT",94,160],["Inzaghi","AT",86,45]]},
+ {c:"Man United",s:"2007-08",k:["#da291c","#fbe122"],p:[["Van der Sar","GK",88,45],["Vidić","DF",90,80],["Ferdinand","DF",90,85],["Evra","DF",86,40],["Scholes","MF",87,55],["Carrick","MF",85,38],["C. Ronaldo","AT",95,210],["Rooney","AT",90,110],["Tévez","AT",88,80]]},
+ {c:"Barcelona",s:"2008-09",k:["#a50044","#004d98"],p:[["Valdés","GK",86,32],["Puyol","DF",89,60],["Piqué","DF",88,70],["Alves","DF",88,70],["Xavi","MF",94,140],["Iniesta","MF",93,145],["Busquets","MF",84,45],["Messi","AT",96,230],["Eto'o","AT",91,110],["Henry","AT",89,75]]},
+ {c:"Inter",s:"2009-10",k:["#0068a8","#000000"],p:[["Júlio César","GK",90,50],["Lúcio","DF",88,50],["Samuel","DF",87,45],["Zanetti","DF/MF",88,55],["Maicon","DF",89,70],["Sneijder","MF",91,110],["Cambiasso","MF",87,45],["Eto'o","AT",90,90],["Milito","AT",89,80],["Pandev","AT",83,22]]},
+ {c:"Barcelona",s:"2010-11",k:["#a50044","#004d98"],p:[["Valdés","GK",87,38],["Puyol","DF",88,50],["Piqué","DF",90,85],["Abidal","DF",86,38],["Xavi","MF",95,150],["Iniesta","MF",94,150],["Busquets","MF",90,90],["Messi","AT",98,250],["Villa","AT",90,90],["Pedro","AT",86,45]]},
+ {c:"Chelsea",s:"2011-12",k:["#034694","#ffffff"],p:[["Čech","GK",89,45],["Terry","DF",87,45],["D. Luiz","DF",85,38],["Cole","DF",86,38],["Lampard","MF",88,65],["Mata","MF/AT",88,70],["Mikel","MF",81,14],["Drogba","AT",89,80],["Torres","AT",84,32]]},
+ {c:"Bayern",s:"2012-13",k:["#dc052d","#0066b2"],p:[["Neuer","GK",92,80],["Lahm","DF",91,85],["Boateng","DF",87,50],["Alaba","DF",87,55],["Schweinsteiger","MF",90,95],["Martínez","MF",86,45],["Müller","MF/AT",89,95],["Robben","AT",91,100],["Ribéry","MF/AT",92,110],["Mandžukić","AT",86,45]]},
+ {c:"Dortmund",s:"2012-13",k:["#fde100","#000000"],p:[["Weidenfeller","GK",84,20],["Hummels","DF",89,75],["Subotić","DF",84,26],["Piszczek","DF",85,32],["Gündoğan","MF",87,80],["Bender","MF",83,24],["Reus","MF/AT",89,100],["Götze","MF/AT",88,95],["Lewandowski","AT",92,130],["Błaszczykowski","MF/AT",83,24]]},
+ {c:"Atlético",s:"2013-14",k:["#cb3524","#ffffff"],p:[["Courtois","GK",89,75],["Godín","DF",90,75],["Miranda","DF",86,40],["Juanfran","DF",84,26],["Gabi","MF",84,26],["Koke","MF",87,80],["Arda Turan","MF/AT",86,50],["Diego Costa","AT",89,85],["Villa","AT",85,32]]},
+ {c:"Real Madrid",s:"2013-14",k:["#ffffff","#febe10"],p:[["Casillas","GK",86,30],["Ramos","DF",91,90],["Pepe","DF",87,45],["Marcelo","DF",88,60],["Modrić","MF",91,110],["Di María","MF/AT",90,100],["Alonso","MF",88,60],["Bale","AT",91,110],["Benzema","AT",89,85],["C. Ronaldo","AT",96,230]]},
+ {c:"Barcelona",s:"2014-15",k:["#a50044","#004d98"],p:[["Ter Stegen","GK",88,55],["Piqué","DF",90,80],["Mascherano","DF",87,45],["Alba","DF",87,55],["Rakitić","MF",87,60],["Iniesta","MF",91,95],["Busquets","MF",90,80],["Messi","AT",97,240],["Suárez","AT",93,150],["Neymar","AT",92,180]]},
+ {c:"Juventus",s:"2014-15",k:["#000000","#ffffff"],p:[["Buffon","GK",91,55],["Chiellini","DF",90,70],["Bonucci","DF",89,65],["Barzagli","DF",86,35],["Pirlo","MF",88,55],["Pogba","MF",89,110],["Vidal","MF",89,90],["Marchisio","MF",86,42],["Tévez","AT",90,90],["Morata","AT",85,45]]},
+ {c:"Atlético",s:"2015-16",k:["#cb3524","#ffffff"],p:[["Oblak","GK",91,90],["Godín","DF",90,70],["Giménez","DF",86,50],["Filipe Luís","DF",86,38],["Gabi","MF",84,24],["Koke","MF",87,75],["Saúl","MF",86,55],["Griezmann","AT",92,140],["F. Torres","AT",82,18]]},
+ {c:"Real Madrid",s:"2016-17",k:["#ffffff","#febe10"],p:[["Navas","GK",86,32],["Ramos","DF",92,95],["Varane","DF",88,70],["Marcelo","DF",90,80],["Carvajal","DF",87,55],["Modrić","MF",93,120],["Kroos","MF",92,120],["Casemiro","MF",89,85],["Isco","MF/AT",88,70],["Bale","AT",88,70],["Benzema","AT",90,95],["C. Ronaldo","AT",96,220]]},
+ {c:"Monaco",s:"2016-17",k:["#e51b22","#ffffff"],p:[["Subašić","GK",83,20],["Sidibé","DF",83,24],["Mendy","DF",85,45],["Fabinho","DF/MF",87,80],["Bakayoko","MF",84,32],["B. Silva","MF/AT",89,110],["Lemar","MF/AT",85,50],["Mbappé","AT",90,180],["Falcao","AT",87,60]]},
+ {c:"Liverpool",s:"2018-19",k:["#c8102e","#ffffff"],p:[["Alisson","GK",91,85],["Van Dijk","DF",94,120],["Robertson","DF",89,80],["Alexander-Arnold","DF",89,100],["Matip","DF",85,35],["Fabinho","MF",88,80],["Henderson","MF",85,40],["Wijnaldum","MF",86,50],["Mané","AT",91,120],["Salah","AT",93,150],["Firmino","AT",89,95]]},
+ {c:"Ajax",s:"2018-19",k:["#d2122e","#ffffff"],p:[["Onana","GK",85,40],["De Ligt","DF",88,90],["Blind","DF",84,26],["F. de Jong","MF",89,110],["Van de Beek","MF",85,50],["Schöne","MF",82,16],["Ziyech","MF/AT",87,80],["Tadić","MF/AT",87,60],["Neres","AT",83,35]]},
+ {c:"Tottenham",s:"2018-19",k:["#132257","#ffffff"],p:[["Lloris","GK",87,38],["Alderweireld","DF",86,40],["Vertonghen","DF",86,38],["Trippier","DF",84,30],["Eriksen","MF",89,95],["Sissoko","MF",82,20],["Dele Alli","MF/AT",86,60],["Son","AT",89,110],["Kane","AT",92,150],["Lucas Moura","AT",84,35]]},
+ {c:"Bayern",s:"2019-20",k:["#dc052d","#0066b2"],p:[["Neuer","GK",90,55],["Alaba","DF",88,65],["Davies","DF",87,90],["Boateng","DF",84,26],["Kimmich","DF/MF",91,110],["Goretzka","MF",87,70],["Thiago","MF",89,85],["Müller","MF/AT",89,85],["Gnabry","AT",88,90],["Coman","AT",85,55],["Lewandowski","AT",95,160]]},
+ {c:"PSG",s:"2019-20",k:["#004170","#da291c"],p:[["Navas","GK",87,35],["Thiago Silva","DF",88,55],["Marquinhos","DF",89,90],["Bernat","DF",83,26],["Verratti","MF",88,85],["Gueye","MF",84,30],["Di María","MF/AT",88,70],["Neymar","AT",93,180],["Mbappé","AT",94,220],["Icardi","AT",85,45]]},
+ {c:"Chelsea",s:"2020-21",k:["#034694","#ffffff"],p:[["Mendy","GK",88,45],["Thiago Silva","DF",87,40],["Rüdiger","DF",87,60],["James","DF",87,90],["Chilwell","DF",85,50],["Kanté","MF",92,110],["Jorginho","MF",86,50],["Mount","MF/AT",86,80],["Havertz","MF/AT",87,90],["Werner","AT",84,45],["Pulisic","AT",84,45]]},
+ {c:"Man City",s:"2020-21",k:["#6cabdd","#ffffff"],p:[["Ederson","GK",90,80],["Dias","DF",90,95],["Stones","DF",87,60],["Cancelo","DF",89,85],["Rodri","MF",90,110],["De Bruyne","MF",95,160],["Gündoğan","MF",89,80],["B. Silva","MF/AT",89,95],["Foden","MF/AT",89,120],["Sterling","AT",88,90],["Mahrez","AT",87,70]]},
+ {c:"Real Madrid",s:"2021-22",k:["#ffffff","#febe10"],p:[["Courtois","GK",92,75],["Militão","DF",87,70],["Alaba","DF",87,55],["Mendy","DF",85,45],["Casemiro","MF",89,70],["Modrić","MF",90,70],["Kroos","MF",89,65],["Valverde","MF",88,100],["Vinícius Jr","AT",92,180],["Benzema","AT",94,130],["Rodrygo","AT",87,90]]},
+ {c:"Man City",s:"2022-23",k:["#6cabdd","#ffffff"],p:[["Ederson","GK",89,70],["Dias","DF",90,90],["Stones","DF",89,75],["Walker","DF",87,50],["Aké","DF",85,45],["Rodri","MF",93,130],["De Bruyne","MF",94,150],["Gündoğan","MF",89,70],["B. Silva","MF/AT",88,85],["Grealish","MF/AT",87,80],["Haaland","AT",95,220],["Foden","MF/AT",89,110]]},
+ {c:"Inter",s:"2022-23",k:["#0068a8","#000000"],p:[["Onana","GK",88,50],["Bastoni","DF",88,80],["Škriniar","DF",86,55],["Dumfries","DF",84,40],["Barella","MF",89,100],["Çalhanoğlu","MF",88,80],["Mkhitaryan","MF",84,26],["Lautaro","AT",90,120],["Džeko","AT",83,18],["Lukaku","AT",85,50]]},
+ {c:"Arsenal",s:"2023-24",k:["#ef0107","#ffffff"],p:[["Raya","GK",86,45],["Saliba","DF",89,100],["Gabriel","DF",88,80],["White","DF",85,55],["Rice","MF",90,120],["Ødegaard","MF",91,130],["Havertz","MF/AT",86,70],["Saka","AT",91,150],["Martinelli","AT",86,70],["Jesus","AT",85,50],["Trossard","AT",84,40]]},
+ {c:"Real Madrid",s:"2023-24",k:["#ffffff","#febe10"],p:[["Lunin","GK",85,35],["Rüdiger","DF",89,65],["Carvajal","DF",88,50],["Camavinga","MF",88,110],["Tchouaméni","MF",87,90],["Valverde","MF",89,120],["Kroos","MF",90,55],["Bellingham","MF/AT",93,180],["Vinícius Jr","AT",94,200],["Rodrygo","AT",88,100],["Joselu","AT",79,12]]},
+ {c:"Leverkusen",s:"2023-24",k:["#e32221","#000000"],p:[["Hrádecký","GK",84,20],["Tah","DF",87,65],["Grimaldo","DF",87,65],["Tapsoba","DF",84,45],["Xhaka","MF",87,50],["Palacios","MF",85,55],["Wirtz","MF/AT",92,180],["Frimpong","DF/MF",85,60],["Hofmann","MF/AT",82,20],["Boniface","AT",84,50]]},
+ {c:"PSG",s:"2024-25",k:["#004170","#da291c"],p:[["Donnarumma","GK",90,65],["Marquinhos","DF",87,55],["Hakimi","DF",90,110],["Pacho","DF",85,55],["Nuno Mendes","DF",88,90],["Vitinha","MF",90,120],["J. Neves","MF",87,100],["Ruiz","MF",85,55],["Dembélé","AT",92,150],["Kvaratskhelia","AT",90,130],["Doué","MF/AT",87,120],["Barcola","AT",86,90]]},
+ {c:"Barcelona",s:"2024-25",k:["#a50044","#004d98"],p:[["Szczęsny","GK",85,25],["Cubarsí","DF",87,110],["Koundé","DF",87,70],["Martínez","DF",85,55],["Pedri","MF",92,160],["F. de Jong","MF",87,70],["Olmo","MF/AT",87,80],["Yamal","AT",94,250],["Raphinha","AT",91,130],["Lewandowski","AT",88,55],["Ferran","AT",84,45]]}
+];
+
+/* Giants, ordered easiest → hardest. atk/def feed the goal model. */
+const GIANTS = [
+ {id:"ars04", c:"Arsenal", s:"2003-04", k:["#ef0107","#ffffff"], atk:87, def:86, diff:1,
+  blurb:"The Invincibles. 38 league games, zero defeats. Henry at full sprint."},
+ {id:"mun99", c:"Man United", s:"1998-99", k:["#da291c","#fbe122"], atk:89, def:86, diff:2,
+  blurb:"Fergie's treble winners. They score in injury time. Always."},
+ {id:"mci23", c:"Man City", s:"2022-23", k:["#6cabdd","#ffffff"], atk:91, def:89, diff:3,
+  blurb:"The treble machine. Rodri conducts, Haaland finishes."},
+ {id:"rma17", c:"Real Madrid", s:"2016-17", k:["#ffffff","#febe10"], atk:93, def:88, diff:4,
+  blurb:"Zidane's double winners, mid three-peat. Knockout football's final boss."},
+ {id:"bar11", c:"Barcelona", s:"2010-11", k:["#a50044","#004d98"], atk:94, def:90, diff:5,
+  blurb:"Pep's Barça, prime Messi–Xavi–Iniesta. Widely called the best team ever."}
+];
+
+/* =====================================================================
+   GAME STATE
+===================================================================== */
+const BUDGET = 500, RESPIN_COST = 30, SIMS = 10000;
+/* Prices were tuned for a 5-signing game; rescale to the €500M full-XI economy. */
+TEAMS.forEach(t => t.p.forEach(p => { p[3] = Math.max(5, Math.round(p[3] * 0.5)); }));
+const FORMATIONS = {
+  "4-3-3": { DF: 4, MF: 3, AT: 3, tag: "The classic. Balance everywhere." },
+  "3-5-2": { DF: 3, MF: 5, AT: 2, tag: "Own the midfield, strangle the game." },
+  "5-2-3": { DF: 5, MF: 2, AT: 3, tag: "Park the bus — but give it teeth." }
+};
+let giant = GIANTS[0], formation = "4-3-3";
+let bank, slots, drawnPool, currentTeam, signedTeams, spinning = false;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = id => document.getElementById(id);
+const fmtM = v => "€" + (Math.round(v * 10) / 10).toFixed(1) + "M";
+const initials = c => c.split(/\s+/).map(w => w[0]).join("").slice(0, 3).toUpperCase();
+const positions = p => p.split("/");
+
+/* ---------- club shirt (SVG jersey with initials) ---------- */
+const LIGHT_KITS = ["#ffffff","#fde100","#fbe122","#6cabdd","#febe10"];
+function shirtSVG(k, label, big){
+  const d = document.createElement("div");
+  d.className = "crest" + (big ? " big" : "");
+  const txt = LIGHT_KITS.includes(k[0]) ? "#1b2547" : "#ffffff";
+  d.innerHTML =
+    `<svg viewBox="0 0 48 48" aria-hidden="true">` +
+    `<path d="M17 6 L24 10.5 L31 6 L42 12 L38.5 20.5 L33 18 L33 42 L15 42 L15 18 L9.5 20.5 L6 12 Z" fill="${k[0]}" stroke="rgba(255,255,255,.3)" stroke-width="1.2" stroke-linejoin="round"/>` +
+    `<path d="M17 6 L6 12 L9.5 20.5 L15 18 L15 11 Z" fill="${k[1]}"/>` +
+    `<path d="M31 6 L42 12 L38.5 20.5 L33 18 L33 11 Z" fill="${k[1]}"/>` +
+    `<path d="M20 6.9 Q24 10.5 28 6.9" fill="none" stroke="${k[1]}" stroke-width="1.6"/>` +
+    `<text x="24" y="31" text-anchor="middle" font-size="10" font-weight="900" font-family="system-ui,sans-serif" fill="${txt}">${label}</text>` +
+    `</svg>`;
+  return d;
+}
+
+/* ---------- deterministic per-season stats ---------- */
+function h32(s){
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function seededRng(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function statsFor(name, team, posStr, r){
+  if (name === "Emergency loanee") return "";
+  const rand = seededRng(h32(name + team.c + team.s));
+  const apps = 30 + Math.floor(rand() * 18);
+  const main = positions(posStr)[0];
+  if (main === "GK"){
+    const cs = Math.min(apps, Math.max(5, Math.round(apps * (0.32 + (r - 78) * 0.012 + rand() * 0.08))));
+    const saves = Math.round(apps * (2.1 + rand() * 1.4));
+    return `${apps} apps · ${cs} clean sheets · ${saves} saves`;
+  }
+  if (main === "DF"){
+    const cs = Math.min(apps, Math.max(4, Math.round(apps * (0.3 + (r - 78) * 0.011 + rand() * 0.08))));
+    const clr = Math.round(apps * (3.2 + rand() * 2.6));
+    return `${apps} apps · ${cs} clean sheets · ${clr} clearances`;
+  }
+  if (main === "MF"){
+    const ast = Math.max(2, Math.round((r - 70) * 0.55 + rand() * 5));
+    const passes = Math.round(apps * (46 + (r - 74) * 1.5 + rand() * 12));
+    return `${apps} apps · ${ast} assists · ${passes.toLocaleString("en-US")} passes`;
+  }
+  const goals = Math.max(3, Math.round((r - 65) * 1.05 + rand() * 8));
+  return `${apps} apps · ${goals} goals`;
+}
+
+/* =====================================================================
+   SCREENS
+===================================================================== */
+function show(id){
+  ["scr-intro","scr-draft","scr-result"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  window.scrollTo(0, 0);
+}
+
+/* ---------- intro ---------- */
+function renderBench(){
+  const box = $("bench-list");
+  box.innerHTML = "";
+  GIANTS.forEach(g => {
+    const b = document.createElement("button");
+    b.className = "bench-card" + (g.id === giant.id ? " sel" : "");
+    b.setAttribute("type","button");
+    b.appendChild(shirtSVG(g.k, initials(g.c), false));
+    const m = document.createElement("div");
+    m.className = "bench-meta";
+    const pips = Array.from({length:5}, (_,i) => `<span class="pip${i < g.diff ? " on" : ""}"></span>`).join("");
+    m.innerHTML = `<div class="bench-name">${g.c} ${g.s}</div><div class="bench-blurb">${g.blurb}</div><div class="pips">${pips}</div>`;
+    b.appendChild(m);
+    b.onclick = () => { giant = g; renderBench(); };
+    box.appendChild(b);
+  });
+}
+
+function renderFormations(){
+  const box = $("form-list");
+  box.innerHTML = "";
+  Object.entries(FORMATIONS).forEach(([name, f]) => {
+    const b = document.createElement("button");
+    b.className = "bench-card" + (name === formation ? " sel" : "");
+    b.setAttribute("type","button");
+    b.innerHTML = `<div class="bench-meta"><div class="bench-name mono">${name}</div><div class="bench-blurb">${f.tag} 1 GK · ${f.DF} DF · ${f.MF} MF · ${f.AT} AT.</div></div>`;
+    b.onclick = () => { formation = name; renderFormations(); };
+    box.appendChild(b);
+  });
+}
+
+/* ---------- draft ---------- */
+function startDraft(){
+  bank = BUDGET;
+  const f = FORMATIONS[formation];
+  slots = [{ pos: "GK", player: null }]
+    .concat(Array.from({length: f.DF}, () => ({ pos: "DF", player: null })))
+    .concat(Array.from({length: f.MF}, () => ({ pos: "MF", player: null })))
+    .concat(Array.from({length: f.AT}, () => ({ pos: "AT", player: null })));
+  drawnPool = [...TEAMS.keys()];
+  signedTeams = [];
+  currentTeam = null;
+  $("players").classList.add("hidden");
+  $("draft-note").classList.add("hidden");
+  $("go-tie").classList.add("hidden");
+  $("btn-respin").classList.add("hidden");
+  $("btn-spin").classList.remove("hidden");
+  $("w-club").textContent = "The wheel of Europe";
+  $("w-season").textContent = "1992 – today";
+  setMysteryShirt();
+  $("wheel-hint").textContent = "Spin to draw a legendary squad.";
+  renderBank(); renderSlots();
+  show("scr-draft");
+}
+
+function renderBank(){
+  const el = $("bank");
+  el.textContent = fmtM(bank);
+  el.classList.toggle("low", bank < 60);
+}
+
+function renderSlots(){
+  const box = $("slots");
+  box.innerHTML = "";
+  ["AT","MF","DF","GK"].forEach(pos => {
+    const row = document.createElement("div");
+    row.className = "pitch-row";
+    slots.filter(s => s.pos === pos).forEach(s => {
+      const d = document.createElement("div");
+      d.className = "slot" + (s.player ? " filled" : "");
+      d.innerHTML = `<div class="pos pos-${s.pos}">${s.pos}</div>` +
+        (s.player
+          ? `<div class="who">${s.player.name}</div><div class="r mono">${s.player.rating} · ${fmtM(s.player.price)}</div>`
+          : `<div class="r" style="margin-top:6px">—</div>`);
+      row.appendChild(d);
+    });
+    box.appendChild(row);
+  });
+}
+
+function openSummary(){
+  const c = { GK: 0, DF: 0, MF: 0, AT: 0 };
+  slots.forEach(s => { if (!s.player) c[s.pos]++; });
+  return Object.entries(c).filter(([,n]) => n > 0).map(([p, n]) => `${p}×${n}`).join(" · ");
+}
+
+function eligibleSlot(posStr){
+  const ps = positions(posStr);
+  for (const s of slots) if (!s.player && ps.includes(s.pos)) return s;
+  return null;
+}
+
+function spin(fromRespin){
+  if (spinning) return;
+  if (fromRespin){
+    if (bank < RESPIN_COST) return;
+    bank -= RESPIN_COST;
+    renderBank();
+  }
+  spinning = true;
+  $("players").classList.add("hidden");
+  $("draft-note").classList.add("hidden");
+  $("btn-spin").disabled = true;
+  $("btn-respin").disabled = true;
+
+  if (!drawnPool.length) drawnPool = [...TEAMS.keys()];
+  const pickIdx = drawnPool[Math.floor(Math.random() * drawnPool.length)];
+
+  const reveal = () => {
+    drawnPool = drawnPool.filter(i => i !== pickIdx);
+    currentTeam = pickIdx;
+    const t = TEAMS[pickIdx];
+    setWheelFace(t);
+    $("wheel-card").classList.remove("landed");
+    void $("wheel-card").offsetWidth;
+    $("wheel-card").classList.add("landed");
+    $("wheel-hint").textContent = `Sign one player from this squad — open: ${openSummary()}.`;
+    renderPlayers(t);
+    spinning = false;
+    $("btn-spin").classList.add("hidden");
+    $("btn-respin").classList.remove("hidden");
+    $("btn-respin").disabled = bank < RESPIN_COST;
+  };
+
+  if (reduceMotion){ reveal(); return; }
+  let ticks = 0, total = 12 + Math.floor(Math.random() * 5);
+  const step = () => {
+    ticks++;
+    setWheelFace(TEAMS[Math.floor(Math.random() * TEAMS.length)]);
+    if (ticks < total) setTimeout(step, 30 + ticks * ticks * 0.8);
+    else reveal();
+  };
+  step();
+}
+
+function setWheelFace(t){
+  $("w-club").textContent = t.c;
+  $("w-season").textContent = t.s;
+  const holder = $("w-crest");
+  holder.replaceChildren(...shirtSVG(t.k, initials(t.c), true).childNodes);
+}
+
+function setMysteryShirt(){
+  const holder = $("w-crest");
+  holder.replaceChildren(...shirtSVG(["#1b2547","#26325c"], "?", true).childNodes);
+}
+
+function renderPlayers(t){
+  const box = $("players");
+  box.innerHTML = "";
+  let anySignable = false;
+  const sorted = [...t.p].sort((a, b) => b[2] - a[2]);
+  sorted.forEach(([name, pos, rating, price]) => {
+    const slot = eligibleSlot(pos);
+    const afford = price <= bank;
+    const ok = !!slot && afford;
+    if (ok) anySignable = true;
+    const row = document.createElement("div");
+    row.className = "prow" + (ok ? "" : " off");
+    const mainPos = positions(pos)[0];
+    row.innerHTML =
+      `<span class="pbadge pos-${mainPos}">${pos}</span>` +
+      `<span class="pname">${name}<span class="pstats">${statsFor(name, t, pos, rating)}</span></span>` +
+      `<span class="prating mono">${rating}</span>` +
+      `<span class="pprice mono">${fmtM(price)}</span>`;
+    const btn = document.createElement("button");
+    btn.className = "psign";
+    btn.textContent = "Sign";
+    btn.disabled = !ok;
+    btn.title = ok ? "" : (!slot ? "No open slot for this position" : "Can't afford him");
+    btn.onclick = () => signPlayer({ name, pos, rating, price }, slot);
+    row.appendChild(btn);
+    box.appendChild(row);
+  });
+  box.classList.remove("hidden");
+
+  const note = $("draft-note");
+  if (!anySignable){
+    note.innerHTML = `Nobody here fits your budget or open slots. <b>An emergency loanee (rating 68, free)</b> will take your next open slot — or re-spin for ${fmtM(RESPIN_COST)}.`;
+    const b = document.createElement("button");
+    b.className = "psign";
+    b.style.marginLeft = "8px";
+    b.textContent = "Take the loanee";
+    b.onclick = () => {
+      const s = slots.find(x => !x.player);
+      signPlayer({ name: "Emergency loanee", pos: s.pos, rating: 68, price: 0 }, s);
+    };
+    note.appendChild(b);
+    note.classList.remove("hidden");
+  }
+}
+
+function signPlayer(p, slot){
+  if (!slot || p.price > bank) return;
+  bank -= p.price;
+  slot.player = { name: p.name, rating: p.rating, price: p.price };
+  signedTeams.push(currentTeam);
+  renderBank(); renderSlots();
+  $("players").classList.add("hidden");
+  $("draft-note").classList.add("hidden");
+  $("btn-respin").classList.add("hidden");
+  if (slots.every(s => s.player)){
+    $("btn-spin").classList.add("hidden");
+    $("wheel-hint").textContent = "Squad complete. Time to face the giant.";
+    $("go-tie").classList.remove("hidden");
+  } else {
+    $("btn-spin").classList.remove("hidden");
+    $("btn-spin").disabled = false;
+    $("wheel-hint").textContent = `Spin again — still open: ${openSummary()}.`;
+    $("w-club").textContent = "The wheel of Europe";
+    $("w-season").textContent = "1992 – today";
+    setMysteryShirt();
+  }
+}
+
+/* =====================================================================
+   SIMULATION — Poisson goal model over a two-legged tie
+===================================================================== */
+function teamStrength(lineup){
+  // lineup = { GK:[r], DF:[r...], MF:[r...], AT:[r...] } — the full signed XI
+  const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const gk = lineup.GK[0], df = avg(lineup.DF), mf = avg(lineup.MF), at = avg(lineup.AT);
+  return {
+    atk: 0.55 * at + 0.35 * mf + 0.10 * df,
+    def: 0.45 * df + 0.25 * gk + 0.30 * mf
+  };
+}
+
+function lineupOf(picks){
+  const L = { GK: [], DF: [], MF: [], AT: [] };
+  picks.forEach(p => L[p.slot].push(p.rating));
+  return L;
+}
+
+function poisson(lambda){
+  const L = Math.exp(-lambda);
+  let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+}
+
+function lambdas(atkA, defB){ return 1.3 * Math.exp((atkA - defB) / 22); }
+
+function playTie(you, opp){
+  // leg 1: you at home, leg 2: away
+  const y1 = poisson(lambdas(you.atk, opp.def) * 1.15), o1 = poisson(lambdas(opp.atk, you.def) * 0.9);
+  const o2 = poisson(lambdas(opp.atk, you.def) * 1.15), y2 = poisson(lambdas(you.atk, opp.def) * 0.9);
+  let yAgg = y1 + y2, oAgg = o1 + o2, how = "regulation";
+  let ye = 0, oe = 0, pens = null;
+  if (yAgg === oAgg){
+    ye = poisson(lambdas(you.atk, opp.def) / 3);
+    oe = poisson(lambdas(opp.atk, you.def) / 3);
+    yAgg += ye; oAgg += oe;
+    how = "extra time";
+    if (yAgg === oAgg){
+      const edge = 0.5 + ((you.atk + you.def) - (opp.atk + opp.def)) * 0.004;
+      pens = Math.random() < Math.min(0.75, Math.max(0.25, edge));
+      how = "penalties";
+    }
+  }
+  const win = pens === null ? yAgg > oAgg : pens;
+  return { win, y1, o1, y2, o2, yAgg, oAgg, how, pens };
+}
+
+function runSims(you, opp){
+  let wins = 0, sampleWin = null, sampleLoss = null;
+  for (let i = 0; i < SIMS; i++){
+    const t = playTie(you, opp);
+    if (t.win){ wins++; if (!sampleWin) sampleWin = t; }
+    else if (!sampleLoss) sampleLoss = t;
+  }
+  const pct = wins / SIMS * 100;
+  // show a sample that matches the headline result
+  const sample = (pct >= 50 ? sampleWin : sampleLoss) || sampleWin || sampleLoss;
+  return { pct, sample };
+}
+
+/* ---------- best possible XI from the squads you signed from (beam search) ---------- */
+function bestXI(){
+  const teams = signedTeams.map(i => TEAMS[i]);
+  const f = FORMATIONS[formation];
+  const need = { GK: 1, DF: f.DF, MF: f.MF, AT: f.AT };
+  let beam = [{ used: { GK: 0, DF: 0, MF: 0, AT: 0 }, spent: 0, score: 0, picks: [] }];
+  for (const t of teams){
+    const next = [];
+    for (const b of beam){
+      for (const [name, pos, rating, price] of t.p){
+        if (b.spent + price > BUDGET) continue;
+        for (const p of positions(pos)){
+          if (b.used[p] < need[p]){
+            next.push({
+              used: { ...b.used, [p]: b.used[p] + 1 },
+              spent: b.spent + price,
+              score: b.score + rating,
+              picks: b.picks.concat({ name, slot: p, rating, price, club: t.c, season: t.s })
+            });
+            break;
+          }
+        }
+      }
+    }
+    if (!next.length) return null;
+    next.sort((a, b) => b.score - a.score || a.spent - b.spent);
+    const seen = new Set();
+    beam = [];
+    for (const cand of next){
+      const key = `${cand.used.GK},${cand.used.DF},${cand.used.MF},${cand.used.AT},${Math.round(cand.spent / 5)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      beam.push(cand);
+      if (beam.length >= 600) break;
+    }
+  }
+  const b = beam[0];
+  return b ? { score: b.score, spent: b.spent, picks: b.picks } : null;
+}
+
+function storyFor(t, oppName){
+  if (!t) return "";
+  const bits = [];
+  if (t.y1 > t.o1) bits.push(`You take a ${t.y1}–${t.o1} lead into the away leg.`);
+  else if (t.y1 < t.o1) bits.push(`${oppName} strike first — you fly out ${t.y1}–${t.o1} down.`);
+  else bits.push(`A cagey ${t.y1}–${t.o1} first leg leaves it all to play for.`);
+  if (t.how === "penalties") bits.push(`The tie refuses to die: level after extra time, it goes to penalties — ${t.pens ? "and your keeper becomes a legend." : "and the giant holds its nerve."}`);
+  else if (t.how === "extra time") bits.push(`Level on aggregate, it takes extra time to settle it ${t.yAgg > t.oAgg ? "— your way." : "— their way."}`);
+  else bits.push(t.yAgg > t.oAgg ? "You see it out on aggregate. Giant, slain." : "The class of the giant tells over 180 minutes.");
+  return bits.join(" ");
+}
+
+function simulate(){
+  const myPicks = slots.map(s => ({ slot: s.pos, rating: s.player.rating }));
+  const you = teamStrength(lineupOf(myPicks));
+  const opp = { atk: giant.atk, def: giant.def };
+  const { pct, sample } = runSims(you, opp);
+  const spent = slots.reduce((a, s) => a + s.player.price, 0);
+
+  $("r-opp").textContent = giant.c + " " + giant.s;
+  $("r-opp-sub").textContent = giant.blurb.split(".")[0] + ".";
+  $("r-you").replaceChildren(...shirtSVG(["#e8c35c","#8a6d1f"], "YOU", true).childNodes);
+  $("r-crest").replaceChildren(...shirtSVG(giant.k, initials(giant.c), true).childNodes);
+  $("r-spend").textContent = fmtM(spent) + " spent · " + formation;
+
+  const pctEl = $("r-pct");
+  pctEl.className = "num mono " + (pct >= 50 ? "good" : pct >= 25 ? "mid" : "bad");
+  const shown = Math.round(pct * 10) / 10;
+  if (reduceMotion) pctEl.textContent = shown + "%";
+  else {
+    let cur = 0;
+    const tick = () => {
+      cur += Math.max(0.4, (shown - cur) * 0.08);
+      if (cur >= shown){ pctEl.textContent = shown + "%"; return; }
+      pctEl.textContent = (Math.round(cur * 10) / 10) + "%";
+      requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  $("r-verdict").textContent =
+    pct >= 60 ? "Giant killer. This five belongs in the history books." :
+    pct >= 45 ? "A real coin flip — on the right night, you take them." :
+    pct >= 25 ? "Live underdogs. You'd need the night of your lives." :
+    pct >= 10 ? "Brave. The giant sleeps easy, though." :
+    "They're already planning the parade. Not for you.";
+
+  if (sample){
+    $("r-leg1").textContent = `${sample.y1} – ${sample.o1}`;
+    $("r-leg2").textContent = `${sample.o2} – ${sample.y2}`;
+    $("r-agg").textContent = `${sample.yAgg} – ${sample.oAgg}` + (sample.how !== "regulation" ? ` (${sample.how})` : "");
+    $("r-story").textContent = storyFor(sample, giant.c);
+  }
+
+  const bf = bestXI();
+  const box = $("r-best");
+  box.innerHTML = "";
+  if (bf){
+    const order = { GK: 0, DF: 1, MF: 2, AT: 3 };
+    [...bf.picks].sort((a, b) => order[a.slot] - order[b.slot] || b.rating - a.rating).forEach(p => {
+      const r = document.createElement("div");
+      r.className = "bf-row";
+      r.innerHTML = `<span class="nm"><span class="pos-${p.slot}" style="font-weight:800">${p.slot}</span> ${p.name} <span style="color:var(--dim);font-weight:400">· ${p.club} ${p.season}</span></span><span class="v mono">${p.rating} · ${fmtM(p.price)}</span>`;
+      box.appendChild(r);
+    });
+    const bfPct = runSims(teamStrength(lineupOf(bf.picks)), opp).pct;
+    const yourAvg = (myPicks.reduce((a, p) => a + p.rating, 0) / 11).toFixed(1);
+    const bfAvg = (bf.score / 11).toFixed(1);
+    $("r-best-sum").textContent =
+      `From the same ${signedTeams.length} squads, the optimal ${fmtM(bf.spent)} XI averages ${bfAvg} and wins ${Math.round(bfPct)}% of ties. Your XI averaged ${yourAvg}.`;
+  } else {
+    $("r-best-sum").textContent = "No affordable alternative XI existed in the squads you drew — you played the hand you were dealt.";
+  }
+
+  show("scr-result");
+}
+
+/* =====================================================================
+   WIRE-UP
+===================================================================== */
+$("btn-start").onclick = startDraft;
+$("btn-spin").onclick = () => spin(false);
+$("btn-respin").onclick = () => spin(true);
+$("btn-sim").onclick = simulate;
+$("btn-restart1").onclick = startDraft;
+$("btn-again").onclick = startDraft;
+$("btn-change").onclick = () => show("scr-intro");
+renderBench();
+renderFormations();
+</script>
