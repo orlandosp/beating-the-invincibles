@@ -95,19 +95,19 @@
   .bank-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 
   .pitch{
-    display:flex;flex-direction:column;gap:7px;margin:14px 0 20px;padding:12px 8px;
+    display:flex;flex-direction:column;gap:5px;margin:14px 0 8px;padding:9px 6px;
     border:1px solid var(--line);border-radius:12px;
     background:linear-gradient(180deg, rgba(79,178,106,.07), rgba(79,178,106,.015) 70%, transparent);
   }
-  .pitch-row{display:flex;gap:6px;justify-content:center}
+  .pitch-row{display:flex;gap:5px;justify-content:center}
   .slot{
-    flex:0 1 96px;min-width:0;background:var(--panel);border:1px dashed var(--line);border-radius:10px;
-    padding:7px 4px;text-align:center;min-height:56px;
+    flex:0 1 96px;min-width:0;background:var(--panel);border:1px dashed var(--line);border-radius:8px;
+    padding:5px 3px;text-align:center;min-height:44px;
   }
   .slot.filled{border-style:solid;border-color:var(--line);background:var(--panel-2)}
-  .slot .pos{font-size:10px;font-weight:800;letter-spacing:.12em}
-  .slot .who{font-size:11px;font-weight:700;line-height:1.15;margin-top:5px;color:var(--chalk);overflow-wrap:anywhere}
-  .slot .r{font-size:10px;color:var(--dim);margin-top:2px}
+  .slot .pos{font-size:9px;font-weight:800;letter-spacing:.12em}
+  .slot .who{font-size:10.5px;font-weight:700;line-height:1.12;margin-top:3px;color:var(--chalk);overflow-wrap:anywhere}
+  .slot .r{font-size:9.5px;color:var(--dim);margin-top:1px}
   .pos-GK{color:var(--gk)} .pos-DF{color:var(--df)} .pos-MF{color:var(--mf)} .pos-AT{color:var(--at)}
 
   .wheel{
@@ -180,6 +180,24 @@
 
   .stack{display:flex;flex-direction:column;gap:10px}
   .hidden{display:none}
+
+  /* ---------- leaderboard ---------- */
+  .claim-row{display:flex;gap:8px;margin-top:10px}
+  .name-input{
+    flex:1;min-width:0;background:var(--night);border:1px solid var(--line);border-radius:8px;
+    color:var(--chalk);padding:10px 12px;font-size:14px;font-family:inherit;
+  }
+  .name-input:focus-visible{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold-dim)}
+  .brow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
+  .brow:last-child{border-bottom:none}
+  .brow .rk{flex:0 0 26px;text-align:center;font-weight:800;color:var(--dim)}
+  .brow.top1 .rk{color:var(--gold)}
+  .brow .who{flex:1;min-width:0}
+  .brow .who .nm{font-weight:700}
+  .brow .who .ctx{display:block;color:var(--dim);font-size:11px;margin-top:1px}
+  .brow .pct{font-weight:800;color:var(--gold);width:52px;text-align:right}
+  .brow.me{background:rgba(232,195,92,.06);border-radius:8px;padding-left:8px;padding-right:8px}
+  .board-empty{color:var(--dim);font-size:13.5px;padding:8px 2px}
   footer{color:var(--dim);font-size:11.5px;margin-top:34px;line-height:1.5;text-align:center}
 </style>
 
@@ -203,8 +221,9 @@
     <p class="eyebrow" style="margin-top:26px">Choose your shape</p>
     <div class="bench" id="form-list"></div>
 
-    <div class="section-gap">
+    <div class="section-gap stack">
       <button class="btn btn-gold btn-block" id="btn-start">Start drafting</button>
+      <button class="btn btn-ghost btn-block" id="btn-board">Leaderboard</button>
     </div>
   </section>
 
@@ -218,8 +237,6 @@
       <button class="btn btn-ghost" id="btn-restart1" style="padding:9px 14px;font-size:12px">Start over</button>
     </div>
 
-    <div class="pitch" id="slots"></div>
-
     <div class="wheel" id="wheel">
       <div class="wheel-card" id="wheel-card">
         <div class="crest big" id="w-crest" aria-hidden="true">?</div>
@@ -228,18 +245,15 @@
           <div class="wheel-season" id="w-season">1992 – today</div>
         </div>
       </div>
-      <p class="wheel-hint" id="wheel-hint">Spin to draw a legendary squad.</p>
+      <p class="wheel-hint" id="wheel-hint">Spinning…</p>
       <div class="wheel-actions" id="wheel-actions">
-        <button class="btn btn-gold" id="btn-spin">Spin the wheel</button>
         <button class="btn btn-ghost hidden" id="btn-respin">Re-spin · €30M</button>
       </div>
       <div class="players hidden" id="players"></div>
       <p class="note hidden" id="draft-note"></p>
     </div>
 
-    <div class="section-gap hidden" id="go-tie">
-      <button class="btn btn-gold btn-block" id="btn-sim">Squad complete — play the tie</button>
-    </div>
+    <div class="pitch" id="slots"></div>
   </section>
 
   <!-- ============ RESULT ============ -->
@@ -280,9 +294,31 @@
       <p class="bf-sum" id="r-best-sum"></p>
     </div>
 
+    <div class="bestfive" id="rank-box">
+      <p class="eyebrow" style="margin-bottom:8px">Leaderboard</p>
+      <p class="bf-sum" style="border-top:none;margin-top:0;padding-top:0" id="r-rank"></p>
+      <div class="claim-row">
+        <input class="name-input" id="mgr-name" maxlength="18" placeholder="Manager name" aria-label="Manager name">
+        <button class="btn btn-ghost" id="btn-share" style="padding:10px 16px;font-size:13px">Share score</button>
+      </div>
+    </div>
+
     <div class="stack">
       <button class="btn btn-gold btn-block" id="btn-again">Run it back</button>
       <button class="btn btn-ghost btn-block" id="btn-change">Change opponent</button>
+      <button class="btn btn-ghost btn-block" id="btn-board2">View leaderboard</button>
+    </div>
+  </section>
+
+  <!-- ============ LEADERBOARD ============ -->
+  <section id="scr-board" class="hidden">
+    <p class="eyebrow" style="margin-top:6px">Leaderboard — this device</p>
+    <div class="bestfive" id="board-box">
+      <div id="board-list"></div>
+    </div>
+    <div class="stack">
+      <button class="btn btn-gold btn-block" id="btn-board-play">Draft a squad</button>
+      <button class="btn btn-ghost btn-block" id="btn-board-back">Back</button>
     </div>
   </section>
 
@@ -370,7 +406,7 @@ const FORMATIONS = {
   "5-2-3": { DF: 5, MF: 2, AT: 3, tag: "Park the bus — but give it teeth." }
 };
 let giant = GIANTS[0], formation = "4-3-3";
-let bank, slots, drawnPool, currentTeam, signedTeams, spinning = false;
+let bank, slots, drawnPool, currentTeam, signedTeams, spinning = false, spinGen = 0;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const $ = id => document.getElementById(id);
@@ -437,7 +473,7 @@ function statsFor(name, team, posStr, r){
    SCREENS
 ===================================================================== */
 function show(id){
-  ["scr-intro","scr-draft","scr-result"].forEach(s => $(s).classList.toggle("hidden", s !== id));
+  ["scr-intro","scr-draft","scr-result","scr-board"].forEach(s => $(s).classList.toggle("hidden", s !== id));
   window.scrollTo(0, 0);
 }
 
@@ -475,6 +511,8 @@ function renderFormations(){
 
 /* ---------- draft ---------- */
 function startDraft(){
+  spinGen++;
+  spinning = false;
   bank = BUDGET;
   const f = FORMATIONS[formation];
   slots = [{ pos: "GK", player: null }]
@@ -486,15 +524,15 @@ function startDraft(){
   currentTeam = null;
   $("players").classList.add("hidden");
   $("draft-note").classList.add("hidden");
-  $("go-tie").classList.add("hidden");
   $("btn-respin").classList.add("hidden");
-  $("btn-spin").classList.remove("hidden");
   $("w-club").textContent = "The wheel of Europe";
   $("w-season").textContent = "1992 – today";
   setMysteryShirt();
-  $("wheel-hint").textContent = "Spin to draw a legendary squad.";
+  $("wheel-hint").textContent = "Spinning…";
   renderBank(); renderSlots();
   show("scr-draft");
+  const gen = spinGen;
+  setTimeout(() => { if (gen === spinGen) spin(false); }, reduceMotion ? 0 : 350);
 }
 
 function renderBank(){
@@ -544,13 +582,16 @@ function spin(fromRespin){
   spinning = true;
   $("players").classList.add("hidden");
   $("draft-note").classList.add("hidden");
-  $("btn-spin").disabled = true;
+  $("btn-respin").classList.add("hidden");
   $("btn-respin").disabled = true;
+  $("wheel-hint").textContent = "Spinning…";
 
   if (!drawnPool.length) drawnPool = [...TEAMS.keys()];
   const pickIdx = drawnPool[Math.floor(Math.random() * drawnPool.length)];
+  const gen = spinGen;
 
   const reveal = () => {
+    if (gen !== spinGen) return;
     drawnPool = drawnPool.filter(i => i !== pickIdx);
     currentTeam = pickIdx;
     const t = TEAMS[pickIdx];
@@ -561,17 +602,17 @@ function spin(fromRespin){
     $("wheel-hint").textContent = `Sign one player from this squad — open: ${openSummary()}.`;
     renderPlayers(t);
     spinning = false;
-    $("btn-spin").classList.add("hidden");
     $("btn-respin").classList.remove("hidden");
     $("btn-respin").disabled = bank < RESPIN_COST;
   };
 
   if (reduceMotion){ reveal(); return; }
-  let ticks = 0, total = 12 + Math.floor(Math.random() * 5);
+  let ticks = 0, total = 9 + Math.floor(Math.random() * 4);
   const step = () => {
+    if (gen !== spinGen) return;
     ticks++;
     setWheelFace(TEAMS[Math.floor(Math.random() * TEAMS.length)]);
-    if (ticks < total) setTimeout(step, 30 + ticks * ticks * 0.8);
+    if (ticks < total) setTimeout(step, 22 + ticks * ticks * 0.7);
     else reveal();
   };
   step();
@@ -643,17 +684,15 @@ function signPlayer(p, slot){
   $("players").classList.add("hidden");
   $("draft-note").classList.add("hidden");
   $("btn-respin").classList.add("hidden");
+  const gen = spinGen;
   if (slots.every(s => s.player)){
-    $("btn-spin").classList.add("hidden");
-    $("wheel-hint").textContent = "Squad complete. Time to face the giant.";
-    $("go-tie").classList.remove("hidden");
+    $("wheel-hint").textContent = "Squad complete — heading to the tie…";
+    setTimeout(() => { if (gen === spinGen) simulate(); }, reduceMotion ? 0 : 500);
   } else {
-    $("btn-spin").classList.remove("hidden");
-    $("btn-spin").disabled = false;
-    $("wheel-hint").textContent = `Spin again — still open: ${openSummary()}.`;
     $("w-club").textContent = "The wheel of Europe";
     $("w-season").textContent = "1992 – today";
     setMysteryShirt();
+    setTimeout(() => { if (gen === spinGen) spin(false); }, reduceMotion ? 0 : 300);
   }
 }
 
@@ -833,19 +872,97 @@ function simulate(){
     $("r-best-sum").textContent = "No affordable alternative XI existed in the squads you drew — you played the hand you were dealt.";
   }
 
+  const run = {
+    id: "r" + Date.now() + "-" + Math.floor(Math.random() * 1e4),
+    ts: Date.now(), n: managerName(),
+    g: giant.id, gl: giant.c + " " + giant.s, f: formation,
+    pct: Math.round(pct * 10) / 10, spent
+  };
+  const standing = saveRun(run);
+  lastRunId = run.id;
+  $("mgr-name").value = run.n === "Manager" ? "" : run.n;
+  $("r-rank").textContent = standing.rank === 1
+    ? `New #1 of ${standing.total} on this device. The board is yours.`
+    : `Saved — #${standing.rank} of ${standing.total} runs on this device.`;
+
   show("scr-result");
+}
+
+/* =====================================================================
+   LEADERBOARD (this device, localStorage)
+===================================================================== */
+const LB_KEY = "bti-leaderboard", NAME_KEY = "bti-manager";
+let lastRunId = null;
+
+function loadBoard(){
+  try { return JSON.parse(localStorage.getItem(LB_KEY)) || []; } catch (e){ return []; }
+}
+function storeBoard(list){
+  try { localStorage.setItem(LB_KEY, JSON.stringify(list.slice(0, 50))); } catch (e){}
+}
+function managerName(){
+  try { return localStorage.getItem(NAME_KEY) || "Manager"; } catch (e){ return "Manager"; }
+}
+function sortBoard(list){
+  return list.sort((a, b) => b.pct - a.pct || a.spent - b.spent || b.ts - a.ts);
+}
+function saveRun(run){
+  const list = loadBoard();
+  list.push(run);
+  storeBoard(sortBoard(list));
+  return { rank: loadBoard().findIndex(e => e.id === run.id) + 1, total: loadBoard().length };
+}
+function renameRun(id, name){
+  const list = loadBoard();
+  const e = list.find(x => x.id === id);
+  if (e){ e.n = name; storeBoard(list); }
+  try { localStorage.setItem(NAME_KEY, name); } catch (err){}
+}
+function renderBoard(){
+  const box = $("board-list");
+  box.innerHTML = "";
+  const list = loadBoard();
+  if (!list.length){
+    box.innerHTML = `<p class="board-empty">No runs yet. Draft a squad, beat a giant, claim the top spot.</p>`;
+    return;
+  }
+  list.slice(0, 15).forEach((e, i) => {
+    const row = document.createElement("div");
+    row.className = "brow" + (i === 0 ? " top1" : "") + (e.id === lastRunId ? " me" : "");
+    row.innerHTML =
+      `<span class="rk mono">${i + 1}</span>` +
+      `<span class="who"><span class="nm">${e.n}</span><span class="ctx">vs ${e.gl} · ${e.f} · ${fmtM(e.spent)}</span></span>` +
+      `<span class="pct mono">${e.pct}%</span>`;
+    box.appendChild(row);
+  });
+}
+function shareText(run){
+  return `⚽ Beating the Invincibles: my ${run.f} XI (${fmtM(run.spent)}) knocks out ${run.gl} in ${run.pct}% of ties. Top that → https://orlandosp.github.io/beating-the-invincibles/`;
 }
 
 /* =====================================================================
    WIRE-UP
 ===================================================================== */
 $("btn-start").onclick = startDraft;
-$("btn-spin").onclick = () => spin(false);
 $("btn-respin").onclick = () => spin(true);
-$("btn-sim").onclick = simulate;
 $("btn-restart1").onclick = startDraft;
 $("btn-again").onclick = startDraft;
 $("btn-change").onclick = () => show("scr-intro");
+$("btn-board").onclick = () => { renderBoard(); show("scr-board"); };
+$("btn-board2").onclick = () => { renderBoard(); show("scr-board"); };
+$("btn-board-play").onclick = startDraft;
+$("btn-board-back").onclick = () => show("scr-intro");
+$("mgr-name").addEventListener("input", ev => {
+  if (lastRunId) renameRun(lastRunId, ev.target.value.trim() || "Manager");
+});
+$("btn-share").onclick = () => {
+  const run = loadBoard().find(e => e.id === lastRunId);
+  if (!run) return;
+  const btn = $("btn-share");
+  const done = () => { btn.textContent = "Copied!"; setTimeout(() => { btn.textContent = "Share score"; }, 1600); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(shareText(run)).then(done, done);
+  else done();
+};
 renderBench();
 renderFormations();
 </script>
